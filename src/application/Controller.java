@@ -1,18 +1,26 @@
 package application;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
+import javax.swing.JFileChooser;
+import javax.swing.UIManager;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.Videoio;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Slider;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import utilities.Utilities;
 
@@ -31,9 +39,16 @@ public class Controller {
 	private double[] freq; // frequencies for each particular row
 	private int numberOfQuantizionLevels;
 	private int numberOfSamplesPerColumn;
+	private VideoCapture capture;
+	private ScheduledExecutorService timer;
+	private String fileName;
+	
+	@FXML
+	private Slider slider;
 	
 	@FXML
 	private void initialize() {
+		
 		// Optional: You should modify the logic so that the user can change these values
 		// You may also do some experiments with different values
 		width = 64;
@@ -60,16 +75,35 @@ public class Controller {
 	private String getImageFilename() {
 		// This method should return the filename of the image to be played
 		// You should insert your code here to allow user to select the file
-		return "resources/test.png";
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) {
+			//Handle Exception
+			System.out.println(e);
+		}
+		JFileChooser fc = new JFileChooser();
+		fc.setCurrentDirectory(new java.io.File("."));
+		fc.setDialogTitle("Open Video");
+		fc.showOpenDialog(null);
+		return fc.getSelectedFile().getAbsolutePath();
 	}
 	
 	@FXML
 	protected void openImage(ActionEvent event) throws InterruptedException {
 		// This method opens an image and display it using the GUI
 		// You should modify the logic so that it opens and displays a video
-		final String imageFilename = getImageFilename();
-		image = Imgcodecs.imread(imageFilename);
-		imageView.setImage(Utilities.mat2Image(image)); 
+		try {
+			fileName = getImageFilename();
+		} catch (Exception e) {
+			System.out.println(e);
+			fileName = null;
+		}
+		if (fileName != null) {
+			capture = new VideoCapture(fileName);
+			if (capture.isOpened()) {	
+				createFrameGrabber();
+			}
+		}
 		// You don't have to understand how mat2Image() works. 
 		// In short, it converts the image from the Mat format to the Image format
 		// The Mat format is used by the opencv library, and the Image format is used by JavaFX
@@ -123,8 +157,34 @@ public class Controller {
 		} else {
 			// What should you do here?
 		}
-	} 
+	}
 	
-	@FXML
-	private Slider slider;
+	protected void createFrameGrabber() throws InterruptedException {
+		if (capture != null && capture.isOpened()) {
+			double framePerSecond = capture.get(Videoio.CAP_PROP_FPS);
+			
+			Runnable frameGrabber = new Runnable() {
+				@Override
+				public void run() {
+					Mat frame = new Mat();
+					if (capture.read(frame)) {
+						Image im = Utilities.mat2Image(frame);
+						Utilities.onFXThread(imageView.imageProperty(), im);
+						double currentFrameNumber = capture.get(Videoio.CAP_PROP_POS_FRAMES);
+						double totalFrameCount = capture.get(Videoio.CAP_PROP_FRAME_COUNT);
+						slider.setValue(currentFrameNumber/totalFrameCount*(slider.getMax() - slider.getMin()));
+					} else {
+						capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
+					}
+				}
+			};
+			if (timer != null && timer.isShutdown()) {
+				timer.shutdown();
+				timer.awaitTermination(Math.round(1000/framePerSecond), TimeUnit.MILLISECONDS);
+			}
+			
+			timer = Executors.newSingleThreadScheduledExecutor();
+			timer.scheduleAtFixedRate(frameGrabber, 0, Math.round(1000/framePerSecond), TimeUnit.MILLISECONDS);
+		}
+	}
 }
