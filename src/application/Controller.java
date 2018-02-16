@@ -1,5 +1,6 @@
 package application;
 
+import java.io.File;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -8,8 +9,6 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
-import javax.swing.JFileChooser;
-import javax.swing.UIManager;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
@@ -19,9 +18,11 @@ import org.opencv.videoio.Videoio;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.stage.FileChooser;
 import utilities.Utilities;
 
 public class Controller {
@@ -42,9 +43,13 @@ public class Controller {
 	private VideoCapture capture;
 	private ScheduledExecutorService timer;
 	private String fileName;
+	//private SourceDataLine player;
 	
 	@FXML
 	private Slider slider;
+	
+	@FXML
+	private Button button;
 	
 	@FXML
 	private void initialize() {
@@ -75,17 +80,11 @@ public class Controller {
 	private String getImageFilename() {
 		// This method should return the filename of the image to be played
 		// You should insert your code here to allow user to select the file
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception e) {
-			//Handle Exception
-			System.out.println(e);
-		}
-		JFileChooser fc = new JFileChooser();
-		fc.setCurrentDirectory(new java.io.File("."));
-		fc.setDialogTitle("Open Video");
-		fc.showOpenDialog(null);
-		return fc.getSelectedFile().getAbsolutePath();
+		FileChooser fc = new FileChooser();
+		fc.setInitialDirectory(new java.io.File("."));
+		fc.setTitle("Open Video");
+		File file = fc.showOpenDialog(null);
+		return file.getAbsolutePath();
 	}
 	
 	@FXML
@@ -110,8 +109,7 @@ public class Controller {
 		// BTW, you should be able to explain briefly what opencv and JavaFX are after finishing this assignment
 	}
 
-	@FXML
-	protected void playImage(ActionEvent event) throws LineUnavailableException {
+	protected void playImage() throws LineUnavailableException {
 		// This method "plays" the image opened by the user
 		// You should modify the logic so that it plays a video rather than an image
 		if (image != null) {
@@ -173,6 +171,12 @@ public class Controller {
 						double currentFrameNumber = capture.get(Videoio.CAP_PROP_POS_FRAMES);
 						double totalFrameCount = capture.get(Videoio.CAP_PROP_FRAME_COUNT);
 						slider.setValue(currentFrameNumber/totalFrameCount*(slider.getMax() - slider.getMin()));
+						try {
+							image = frame;
+							playImage();
+						} catch (Exception e) {
+							System.out.println(e);
+						}
 					} else {
 						capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
 					}
@@ -185,6 +189,12 @@ public class Controller {
 			
 			timer = Executors.newSingleThreadScheduledExecutor();
 			timer.scheduleAtFixedRate(frameGrabber, 0, Math.round(1000/framePerSecond), TimeUnit.MILLISECONDS);
+		}
+	}
+	
+	protected void closeThreads() {
+		if (timer != null) {
+			timer.shutdownNow();
 		}
 	}
 }
