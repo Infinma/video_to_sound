@@ -43,17 +43,18 @@ public class Controller {
 	private VideoCapture capture;
 	private ScheduledExecutorService timer;
 	private String fileName;
-	//private SourceDataLine player;
+	private SourceDataLine currentAudio;
+	private boolean pause = false;
 	
 	@FXML
 	private Slider slider;
 	
 	@FXML
-	private Button button;
+	private Button pButton;
 	
 	@FXML
 	private void initialize() {
-		
+		pButton.setDisable(true);
 		// Optional: You should modify the logic so that the user can change these values
 		// You may also do some experiments with different values
 		width = 64;
@@ -77,6 +78,21 @@ public class Controller {
 		}
 	}
 	
+	@FXML
+	protected void selectPlayOrPause(ActionEvent event) {
+		if (currentAudio != null) {
+			if (pause) {
+				currentAudio.start();
+				pause = false;
+				pButton.setText("Pause");
+			} else {
+				currentAudio.stop();
+				pause = true;
+				pButton.setText("Play");
+			}
+		}
+	}
+	
 	private String getImageFilename() {
 		// This method should return the filename of the image to be played
 		// You should insert your code here to allow user to select the file
@@ -91,6 +107,9 @@ public class Controller {
 	protected void openImage(ActionEvent event) throws InterruptedException {
 		// This method opens an image and display it using the GUI
 		// You should modify the logic so that it opens and displays a video
+		pButton.setDisable(true);
+		pause = true;
+		pButton.setText("Play");
 		try {
 			fileName = getImageFilename();
 		} catch (Exception e) {
@@ -98,10 +117,16 @@ public class Controller {
 			fileName = null;
 		}
 		if (fileName != null) {
+			closeThreads();
 			capture = new VideoCapture(fileName);
-			if (capture.isOpened()) {	
+			if (capture.isOpened()) {
+				pButton.setDisable(false);
+				pButton.setText("Pause");
+				pause = false;
 				createFrameGrabber();
 			}
+		} else if (currentAudio != null) {
+			pButton.setDisable(false);
 		}
 		// You don't have to understand how mat2Image() works. 
 		// In short, it converts the image from the Mat format to the Image format
@@ -132,6 +157,7 @@ public class Controller {
 			// I used an AudioFormat object and a SourceDataLine object to perform audio output. Feel free to try other options
 	        AudioFormat audioFormat = new AudioFormat(sampleRate, sampleSizeInBits, numberOfChannels, true, true);
             SourceDataLine sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
+            currentAudio = sourceDataLine;
             sourceDataLine.open(audioFormat, sampleRate);
             sourceDataLine.start();
             
@@ -148,6 +174,15 @@ public class Controller {
                 	double normalizedSignal = signal / height; // signal: [-height, height];  normalizedSignal: [-1, 1]
                 	audioBuffer[t-1] = (byte) (normalizedSignal*0x7F); // Be sure you understand what the weird number 0x7F is for
             	}
+            	while (pause) {
+					try {
+						Thread.sleep(100);
+					} catch (Exception e) {
+						System.out.println(e);
+						closeThreads();
+						break;
+					}
+				}
             	sourceDataLine.write(audioBuffer, 0, numberOfSamplesPerColumn);
             }
             sourceDataLine.drain();
@@ -165,6 +200,14 @@ public class Controller {
 				@Override
 				public void run() {
 					Mat frame = new Mat();
+					while (pause) {
+						try {
+							Thread.sleep(100);
+						} catch (Exception e) {
+							System.out.println(e);
+							closeThreads();
+						}
+					}
 					if (capture.read(frame)) {
 						Image im = Utilities.mat2Image(frame);
 						Utilities.onFXThread(imageView.imageProperty(), im);
@@ -193,8 +236,13 @@ public class Controller {
 	}
 	
 	protected void closeThreads() {
+		if (currentAudio != null) {
+			currentAudio.stop();
+			currentAudio.close();
+		}
 		if (timer != null) {
 			timer.shutdownNow();
 		}
+		
 	}
 }
