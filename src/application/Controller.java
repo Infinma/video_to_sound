@@ -22,6 +22,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 import utilities.Utilities;
 
@@ -79,14 +80,24 @@ public class Controller {
 	}
 	
 	@FXML
+	protected void positionSlider(MouseEvent event) {
+		if (capture != null) {
+			double sliderPosition = slider.getValue()/(slider.getMax()-slider.getMin());
+			double totalFrameCount = capture.get(Videoio.CAP_PROP_FRAME_COUNT);
+			capture.set(Videoio.CAP_PROP_POS_FRAMES, sliderPosition*totalFrameCount);
+			switchAudio(true, true);
+		}
+	}
+	
+	@FXML
 	protected void selectPlayOrPause(ActionEvent event) {
 		if (currentAudio != null) {
 			if (pause) {
-				currentAudio.start();
+				switchAudio(false, false);
 				pause = false;
 				pButton.setText("Pause");
 			} else {
-				currentAudio.stop();
+				switchAudio(true, false);
 				pause = true;
 				pButton.setText("Play");
 			}
@@ -108,7 +119,10 @@ public class Controller {
 		// This method opens an image and display it using the GUI
 		// You should modify the logic so that it opens and displays a video
 		pButton.setDisable(true);
-		pause = true;
+		if (currentAudio != null) {
+			switchAudio(true, false);
+			pause = true;
+		}
 		pButton.setText("Play");
 		try {
 			fileName = getImageFilename();
@@ -195,7 +209,6 @@ public class Controller {
 	protected void createFrameGrabber() throws InterruptedException {
 		if (capture != null && capture.isOpened()) {
 			double framePerSecond = capture.get(Videoio.CAP_PROP_FPS);
-			
 			Runnable frameGrabber = new Runnable() {
 				@Override
 				public void run() {
@@ -229,17 +242,27 @@ public class Controller {
 				timer.shutdown();
 				timer.awaitTermination(Math.round(1000/framePerSecond), TimeUnit.MILLISECONDS);
 			}
-			
 			timer = Executors.newSingleThreadScheduledExecutor();
 			timer.scheduleAtFixedRate(frameGrabber, 0, Math.round(1000/framePerSecond), TimeUnit.MILLISECONDS);
 		}
 	}
 	
-	protected void closeThreads() {
+	private void switchAudio(boolean switchOff, boolean terminate) {
+		//Controls the currently running audio, to stop/pause/play
 		if (currentAudio != null) {
-			currentAudio.stop();
-			currentAudio.close();
+			if (switchOff) {
+				currentAudio.stop();
+				if (terminate) {
+					currentAudio.close();
+				}
+			} else {
+				currentAudio.start();
+			}
 		}
+	}
+	
+	protected void closeThreads() {
+		switchAudio(true, true);
 		if (timer != null) {
 			timer.shutdownNow();
 		}
