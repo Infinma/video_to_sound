@@ -1,14 +1,18 @@
 package application;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
@@ -44,8 +48,10 @@ public class Controller {
 	private VideoCapture capture;
 	private ScheduledExecutorService timer;
 	private String fileName;
+	private String clickFileName = "resources/click.wav";
 	private SourceDataLine currentAudio;
 	private boolean pause = false;
+	private Clip click;
 	
 	@FXML
 	private Slider slider;
@@ -54,7 +60,7 @@ public class Controller {
 	private Button pButton;
 	
 	@FXML
-	private void initialize() {
+	private void initialize() throws UnsupportedAudioFileException, IOException, LineUnavailableException {
 		pButton.setDisable(true);
 		// Optional: You should modify the logic so that the user can change these values
 		// You may also do some experiments with different values
@@ -77,6 +83,12 @@ public class Controller {
 		for (int m = height/2-2; m >=0; m--) {
 			freq[m] = freq[m+1] * Math.pow(2, -1.0/12.0); 
 		}
+		
+		// Initialize click audio
+		File clickFile = new File(clickFileName);
+		AudioInputStream audioIn = AudioSystem.getAudioInputStream(clickFile);
+		click = AudioSystem.getClip();
+		click.open(audioIn);
 	}
 	
 	@FXML
@@ -200,9 +212,12 @@ public class Controller {
             	sourceDataLine.write(audioBuffer, 0, numberOfSamplesPerColumn);
             }
             sourceDataLine.drain();
+            click.setMicrosecondPosition(0);
+            click.start();
             sourceDataLine.close();
 		} else {
 			// What should you do here?
+			System.out.println("Error: no image detected");
 		}
 	}
 	
@@ -248,7 +263,7 @@ public class Controller {
 	}
 	
 	private void switchAudio(boolean switchOff, boolean terminate) {
-		//Controls the currently running audio, to stop/pause/play
+		// Controls the currently running audio, to stop/pause/play
 		if (currentAudio != null) {
 			if (switchOff) {
 				currentAudio.stop();
