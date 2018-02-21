@@ -10,6 +10,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -52,9 +53,15 @@ public class Controller {
 	private SourceDataLine currentAudio;
 	private boolean pause = false;
 	private Clip click;
+	private float volume;
+	private FloatControl clickVolume;
+	private FloatControl mainVolume;
 	
 	@FXML
 	private Slider slider;
+	
+	@FXML
+	private Slider vSlider;
 	
 	@FXML
 	private Button pButton;
@@ -89,6 +96,7 @@ public class Controller {
 		AudioInputStream audioIn = AudioSystem.getAudioInputStream(clickFile);
 		click = AudioSystem.getClip();
 		click.open(audioIn);
+		clickVolume = (FloatControl) click.getControl(FloatControl.Type.MASTER_GAIN);
 	}
 	
 	@FXML
@@ -98,6 +106,16 @@ public class Controller {
 			double totalFrameCount = capture.get(Videoio.CAP_PROP_FRAME_COUNT);
 			capture.set(Videoio.CAP_PROP_POS_FRAMES, sliderPosition*totalFrameCount);
 			switchAudio(true, true);
+		}
+	}
+	
+	@FXML
+	protected void volumeSlider(MouseEvent event) {
+		double sliderPosition = vSlider.getValue()/(vSlider.getMax()-vSlider.getMin());
+		volume = (float) (sliderPosition*Math.abs(mainVolume.getMinimum()) - Math.abs(mainVolume.getMinimum()));
+		clickVolume.setValue(volume);
+		if (currentAudio != null) {
+			mainVolume.setValue(volume);
 		}
 	}
 	
@@ -185,6 +203,8 @@ public class Controller {
             SourceDataLine sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
             currentAudio = sourceDataLine;
             sourceDataLine.open(audioFormat, sampleRate);
+            mainVolume = (FloatControl) sourceDataLine.getControl(FloatControl.Type.MASTER_GAIN);
+            mainVolume.setValue(volume);
             sourceDataLine.start();
             
             for (int col = 0; col < width; col++) {
