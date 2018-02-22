@@ -25,6 +25,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -57,14 +58,14 @@ public class Controller {
 	private FloatControl clickVolume;
 	private FloatControl mainVolume;
 	
-	@FXML
-	private Slider slider;
-	
-	@FXML
-	private Slider vSlider;
-	
-	@FXML
-	private Button pButton;
+	@FXML private Slider slider;
+	@FXML private Slider vSlider;
+	@FXML private Button pButton;
+	@FXML private TextField widthSetting;
+	@FXML private TextField heightSetting;
+	@FXML private TextField rateSetting;
+	@FXML private TextField sizeSetting;
+	@FXML private TextField samplePerColSetting;
 	
 	@FXML
 	private void initialize() throws UnsupportedAudioFileException, IOException, LineUnavailableException {
@@ -76,10 +77,14 @@ public class Controller {
 		sampleRate = 8000;
 		sampleSizeInBits = 8;
 		numberOfChannels = 1;
-		
 		numberOfQuantizionLevels = 16;
-		
 		numberOfSamplesPerColumn = 500;
+		
+		widthSetting.setText(Integer.toString(width));
+		heightSetting.setText(Integer.toString(height));
+		rateSetting.setText(Integer.toString(sampleRate));
+		sizeSetting.setText(Integer.toString(sampleSizeInBits));
+		samplePerColSetting.setText(Integer.toString(numberOfSamplesPerColumn));
 		
 		// assign frequencies for each particular row
 		freq = new double[height]; // Be sure you understand why it is height rather than width
@@ -97,6 +102,40 @@ public class Controller {
 		click = AudioSystem.getClip();
 		click.open(audioIn);
 		clickVolume = (FloatControl) click.getControl(FloatControl.Type.MASTER_GAIN);
+	}
+	
+	private int validateSetting(int original, TextField input) {
+		try {
+			int convertedInput = Integer.parseInt(input.getText());
+			if (convertedInput <= 0) {
+				input.setText(Integer.toString(original));
+				convertedInput = original;
+			}
+			return convertedInput;
+		} catch(NumberFormatException e) {
+			input.setText(Integer.toString(original));
+			return original;
+		}
+	}
+	
+	@FXML
+	protected void updateSettings(ActionEvent event) {
+		int original = height;
+		width = validateSetting(width, widthSetting);
+		height = validateSetting(height, heightSetting);
+		sampleRate = validateSetting(sampleRate, rateSetting);
+		sampleSizeInBits = validateSetting(sampleSizeInBits, sizeSetting);
+		numberOfSamplesPerColumn = validateSetting(numberOfSamplesPerColumn, samplePerColSetting);
+		if (height != original) {
+			freq = new double[height];
+			freq[height/2-1] = 440.0;
+			for (int m = height/2; m < height; m++) {
+				freq[m] = freq[m-1] * Math.pow(2, 1.0/12.0); 
+			}
+			for (int m = height/2-2; m >=0; m--) {
+				freq[m] = freq[m+1] * Math.pow(2, -1.0/12.0); 
+			}
+		}
 	}
 	
 	@FXML
@@ -178,7 +217,7 @@ public class Controller {
 		// BTW, you should be able to explain briefly what opencv and JavaFX are after finishing this assignment
 	}
 
-	protected void playImage() throws LineUnavailableException {
+	private void playImage() throws LineUnavailableException {
 		// This method "plays" the image opened by the user
 		// You should modify the logic so that it plays a video rather than an image
 		if (image != null) {
@@ -224,7 +263,6 @@ public class Controller {
 					try {
 						Thread.sleep(100);
 					} catch (Exception e) {
-						System.out.println(e);
 						closeThreads();
 						break;
 					}
@@ -241,7 +279,7 @@ public class Controller {
 		}
 	}
 	
-	protected void createFrameGrabber() throws InterruptedException {
+	private void createFrameGrabber() throws InterruptedException {
 		if (capture != null && capture.isOpened()) {
 			double framePerSecond = capture.get(Videoio.CAP_PROP_FPS);
 			Runnable frameGrabber = new Runnable() {
@@ -252,7 +290,6 @@ public class Controller {
 						try {
 							Thread.sleep(100);
 						} catch (Exception e) {
-							System.out.println(e);
 							closeThreads();
 						}
 					}
@@ -301,6 +338,5 @@ public class Controller {
 		if (timer != null) {
 			timer.shutdownNow();
 		}
-		
 	}
 }

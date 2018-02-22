@@ -18,34 +18,105 @@
    <bottom>
       <VBox prefHeight="111.0" prefWidth="600.0" BorderPane.alignment="CENTER">
          <children>
-            <VBox>
+            <HBox prefWidth="200.0">
                <children>
-                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Volume">
-                     <VBox.margin>
-                        <Insets left="100.0" />
-                     </VBox.margin>
-                  </Text>
-                  <Slider fx:id="vSlider" maxWidth="-Infinity" minWidth="-Infinity" onMouseReleased="#volumeSlider" prefWidth="100.0" value="100.0">
-                     <VBox.margin>
-                        <Insets left="100.0" right="400.0" />
-                     </VBox.margin>
-                  </Slider>
-                  <HBox prefHeight="68.0" prefWidth="600.0">
+                  <VBox prefWidth="50.0">
                      <children>
-                        <Button mnemonicParsing="false" onAction="#openImage" prefHeight="40.0" prefWidth="100.0" text="Open">
-                           <HBox.margin>
-                              <Insets left="150.0" top="10.0" />
-                           </HBox.margin>
-                        </Button>
-                        <Button fx:id="pButton" mnemonicParsing="false" onAction="#selectPlayOrPause" prefHeight="40.0" prefWidth="100.0" text="Play">
-                           <HBox.margin>
-                              <Insets left="100.0" top="10.0" />
-                           </HBox.margin>
-                        </Button>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Width">
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </Text>
+                        <TextField fx:id="widthSetting" />
                      </children>
-                  </HBox>
+                     <HBox.margin>
+                        <Insets left="100.0" />
+                     </HBox.margin>
+                  </VBox>
+                  <VBox prefWidth="50.0">
+                     <children>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Height">
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </Text>
+                        <TextField fx:id="heightSetting" />
+                     </children>
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                  </VBox>
+                  <VBox prefWidth="85.0">
+                     <children>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Sample Rate" />
+                        <TextField fx:id="rateSetting" />
+                     </children>
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                  </VBox>
+                  <VBox layoutX="315.0" layoutY="10.0" prefWidth="85.0">
+                     <children>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Samples Per Col" />
+                        <TextField fx:id="samplePerColSetting" />
+                     </children>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                  </VBox>
+                  <VBox layoutX="220.0" layoutY="10.0" prefWidth="85.0">
+                     <children>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Sample Size" />
+                        <TextField fx:id="sizeSetting" />
+                     </children>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                  </VBox>
                </children>
-            </VBox>
+            </HBox>
+            <HBox prefHeight="68.0" prefWidth="600.0">
+               <children>
+                  <VBox>
+                     <children>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Volume">
+                           <VBox.margin>
+                              <Insets top="5.0" />
+                           </VBox.margin>
+                        </Text>
+                        <Slider fx:id="vSlider" maxWidth="-Infinity" minWidth="-Infinity" onMouseReleased="#volumeSlider" prefWidth="100.0" value="100.0">
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </Slider>
+                     </children>
+                     <HBox.margin>
+                        <Insets left="115.0" />
+                     </HBox.margin>
+                  </VBox>
+                  <Button mnemonicParsing="false" onAction="#openImage" prefWidth="80.0" text="Open">
+                     <HBox.margin>
+                        <Insets left="10.0" top="10.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button fx:id="pButton" mnemonicParsing="false" onAction="#selectPlayOrPause" prefWidth="80.0" text="Play">
+                     <HBox.margin>
+                        <Insets left="10.0" top="10.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" onAction="#updateSettings" prefWidth="80.0" text="Update">
+                     <HBox.margin>
+                        <Insets left="10.0" top="10.0" />
+                     </HBox.margin>
+                  </Button>
+               </children>
+            </HBox>
             <Text strokeType="OUTSIDE" strokeWidth="0.0" text="CMPT 365 | Simon Fraser University | May 2017&#10;Mark Drew (mark@cs.sfu.ca) | Chen Song (csa102@sfu.ca)" textAlignment="CENTER" wrappingWidth="456.638671875">
                <VBox.margin>
                   <Insets left="50.0" />
