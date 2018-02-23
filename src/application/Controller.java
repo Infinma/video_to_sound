@@ -151,7 +151,7 @@ public class Controller {
 	@FXML
 	protected void volumeSlider(MouseEvent event) {
 		double sliderPosition = vSlider.getValue()/(vSlider.getMax()-vSlider.getMin());
-		volume = (float) (sliderPosition*Math.abs(mainVolume.getMinimum()) - Math.abs(mainVolume.getMinimum()));
+		volume = (float) (sliderPosition*Math.abs(clickVolume.getMinimum()) - Math.abs(clickVolume.getMinimum()));
 		clickVolume.setValue(volume);
 		if (currentAudio != null) {
 			mainVolume.setValue(volume);
